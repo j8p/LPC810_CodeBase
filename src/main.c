@@ -32,11 +32,11 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /**************************************************************************/
-#include <stdio.h>
 #include "LPC8xx.h"
-#include "gpio.h"
-#include "mrt.h"
-#include "uart.h"
+
+
+#include "tlob/twoLedsOneButton.h"
+#include "tlob/iron/fsm_TwoLedsOneButton_Iron.h"
 
 #if defined(__CODE_RED)
   #include <cr_section_macros.h>
@@ -44,90 +44,10 @@
   __CRP const unsigned int CRP_WORD = CRP_NO_CRP ;
 #endif
 
-#define LED_LOCATION    (2)
-
-/* This define should be enabled if you want to      */
-/* maintain an SWD/debug connection to the LPC810,   */
-/* but it will prevent you from having access to the */
-/* LED on the LPC810 Mini Board, which is on the     */
-/* SWDIO pin (PIO0_2).                               */
-// #define USE_SWD
-
-void configurePins()
-{
-  /* Enable SWM clock */
-	//  LPC_SYSCON->SYSAHBCLKCTRL |= (1 << 7);  // this is already done in SystemInit()
-
-  /* Pin Assign 8 bit Configuration */
-  /* U0_TXD */
-  /* U0_RXD */
-  LPC_SWM->PINASSIGN0 = 0xffff0004UL;
-
-  /* Pin Assign 1 bit Configuration */
-  #if !defined(USE_SWD)
-    /* Pin setup generated via Switch Matrix Tool
-       ------------------------------------------------
-       PIO0_5 = RESET
-       PIO0_4 = U0_TXD
-       PIO0_3 = GPIO            - Disables SWDCLK
-       PIO0_2 = GPIO (User LED) - Disables SWDIO
-       PIO0_1 = GPIO
-       PIO0_0 = U0_RXD
-       ------------------------------------------------
-       NOTE: SWD is disabled to free GPIO pins!
-       ------------------------------------------------ */
-    LPC_SWM->PINENABLE0 = 0xffffffbfUL;
-  #else
-    /* Pin setup generated via Switch Matrix Tool
-       ------------------------------------------------
-       PIO0_5 = RESET
-       PIO0_4 = U0_TXD
-       PIO0_3 = SWDCLK
-       PIO0_2 = SWDIO
-       PIO0_1 = GPIO
-       PIO0_0 = U0_RXD
-       ------------------------------------------------
-       NOTE: LED on PIO0_2 unavailable due to SWDIO!
-       ------------------------------------------------ */
-    LPC_SWM->PINENABLE0 = 0xffffffb3UL;   
-  #endif  
-}
-
 int main(void)
 {
-  /* Initialise the GPIO block */
-  gpioInit();
+	tlob_setup();
+	fsm_tlob_iron_setup();
 
-  /* Initialise the UART0 block for printf output */
-  uart0Init(115200);
-
-  /* Configure the multi-rate timer for 1ms ticks */
-  mrtInit(__SYSTEM_CLOCK/1000);
-
-  /* Configure the switch matrix (setup pins for UART0 and GPIO) */
-  configurePins();
-
-  /* Set the LED pin to output (1 = output, 0 = input) */
-  #if !defined(USE_SWD)
-    LPC_GPIO_PORT->DIR0 |= (1 << LED_LOCATION);
-  #endif
-
-  while(1)
-  {
-    #if !defined(USE_SWD)
-      /* Turn LED Off by setting the GPIO pin high */
-      LPC_GPIO_PORT->SET0 = 1 << LED_LOCATION;
-      mrtDelay(500);
-
-      /* Turn LED On by setting the GPIO pin low */
-      LPC_GPIO_PORT->CLR0 = 1 << LED_LOCATION;
-      mrtDelay(500);
-    #else
-      /* Just insert a 1 second delay */
-      mrtDelay(1000);
-    #endif
-
-    /* Send some text (printf is redirected to UART0) */
-    printf("Hello, LPC810!\n\r");
-  }
+    while(1) {}
 }

@@ -9,8 +9,8 @@ CROSS = arm-none-eabi-
 CPU = -mthumb -mcpu=cortex-m0plus -MD
 FPU = # -mfloat-abi=soft
 
-FILENAME = blinky
-LINKERSCRIPT = blinky.ld
+FILENAME = tlob_iron
+LINKERSCRIPT = tlob_iron.ld
 
 CFLAGS+= -Os --specs=nano.specs -ffunction-sections -fdata-sections -fno-builtin
 
@@ -31,19 +31,14 @@ LDFLAGS += --gc-sections
 INC += -I../cmsis
 CFLAGS += $(INC) -D__USE_CMSIS # -DCLOCK_SETUP=1
 
-BLINKY_OBJS = main.o \
-              gpio.o \
-              uart.o \
-              mrt.o \
-              printf.o \
-              printf-retarget.o \
+TLOB_IRON_OBJS = main.o \
               system_LPC8xx.o \
               gcc_startup_lpc8xx.o
 
 all: $(FILENAME).bin
 
-blinky.axf: $(FILENAME).ld $(BLINKY_OBJS)
-	@$(LD) -o $@ $(LDFLAGS) -T $(LINKERSCRIPT) $(BLINKY_OBJS) $(LIBGCC)
+tlob_iron.axf: $(FILENAME).ld $(TLOB_IRON_OBJS)
+	@$(LD) -o $@ $(LDFLAGS) -T $(LINKERSCRIPT) $(TLOB_IRON_OBJS) $(LIBGCC)
 	-@echo ""
 	@$(SIZE) $(FILENAME).axf
 
@@ -53,7 +48,7 @@ clean:
 
 %.bin:%.axf
 	-@echo ""
-	-@echo "Generating $(FILENAME).hex (FlashMagic, etc.)"
+	-@echo "Generating $(FILENAME).hex (lpc2lisp, FlashMagic, etc.)"
 	@$(OBJCOPY) --strip-unneeded -O ihex $(FILENAME).axf $(FILENAME).hex
 	-@echo "Generating $(FILENAME).bin"
 	@$(OBJCOPY) --strip-unneeded -O binary $(FILENAME).axf $(FILENAME).bin

@@ -1,39 +1,36 @@
-# LPC810 CodeBase
+# LPC810 TLOB - Iron
 
-Open source code base for the ARM Cortex M0+ LPC810 family from NXP.
+Based on LPC810 CodeBase, it is a simple test to explore LPC810 possibilities. This first test reproduces my steam iron behavior: if you double click on the button, it will stay on. I use the DIP8 package version.
 
-This code base is intended to work with the LPC810 in a DIP8 package.  While these drivers are based on the original LPC800 example code from NXP, the LPC810 has limited resources (4KB flash and 1KB SRAM), so smaller, lighter-weight drivers had to be written to get the most out of these resources we have.
+# How to setup the hardware
 
-The current code implements the following peripheral drivers:
+This code assume you have the micro controller connected with two LEDs (with the corresponding resistors) and one push button. The first LED indicates when the iron is on. The second one indicates if the timing is still short enough to trigger the “stay on” state.
 
-- A basic SPI driver
-- Some simple GPIO helper functions (although GPIO should normally be accessed directly via the appropriate registers)
-- A simple driver for UART0 and printf-redirection that allows 'printf' output to be transmitted to UART0
-- A basic multi-rate timer driver that allows us to set delays
+- LED1 is connected to PIO0_2 on one side and to the resistor and the ground on the other side.
+- LED2 is connected to PIO0_4 on one side and to the resistor and the ground on the other side.
+- Push button is connected to PIO0_3 on one side and to the ground on the other side.
 
-The code base also implements a mini printf that takes up much less space than the default printf used in most libc variants.  If necessary, it's easy to change the printf redirection to a location other than UART0 via the printf-redirection.c file.
+# What is used
 
-# Using the Makefile
+This test uses multi rate timers an pin interrupts. The behavior is configured using a little (could be hierarchical) state machine.
 
-If you wish to use 'make' from the command-line, you can run the following commands:
+# File description
 
-- `make clean`
-- `make all`
+Here is a short description of the files that are not from the original repositiory.
 
-## Common 'Make' Errors
+src/amaf
+src/amaf/event.h - Simple enumeration of the available events for the state machine.
+src/amaf/fsm.h and fsm.c - Naive state machine functions and state definitions
+src/amaf/led.h and led.c - Naive PWM functions for LEDs
+src/amaf/mrtimer.h and mrtimer.c - Simple multi rate timer handling
 
-### make: arm-none-eabi-gcc: No such file or directory
+src/main.c - Minimal main
 
-If you get this error, you need to add the '/bin' folder of your toolchain to your 'system path' variable.
+src/tlbo/twoLedsOneButton.h and twoLedsOneButton.h - Setup for the two LEDs and on button configuration
+src/tlob/iron/fsm_TwoLedsOneButton_Iron.h and fsm_TwoLedsOneButton_Iron.c - Simple state machine that reproduces the steam iron behavior. It only has 7 states.
 
-On OS X or Linux this can be done with the following command ([GCC ARM Embedded 2014 Q2](https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q2-update) used below, stored in the user's `/Downloads` folder):
+# Uploading the firmware using lpc2lisp
 
-```
-export PATH=$HOME/Downloads/gcc-arm-none-eabi-4_8-2014q2/bin:$PATH
-```
+./lpc21isp_197/lpc21isp -NXPARM -verify -debug3 -hex ./Release/LPC810.hex /dev/tty.usbserial 115200 12
 
-You can test if GCC is available on the system path by running the following command:
 
-```
-arm-none-eabi-gcc --version
-```
